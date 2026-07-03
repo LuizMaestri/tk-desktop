@@ -36,7 +36,7 @@ Um único binário com dois modos:
 
 ### Modo CLI
 
-- `tk stats [--since <período>]` — relatório agregado: total por servidor, por tool, top ofensores.
+- `tk stats [--since <período>]` — relatório agregado: total por servidor, por tool, top ofensores. Período no formato `7d`/`24h` (padrão: `7d`).
 - `tk init` — localiza `claude_desktop_config.json` (Claude Desktop) e `.mcp.json`/config do Claude Code, reescreve cada entrada de servidor para rodar via `tk`, criando backup do arquivo original.
 - `tk restore` — desfaz o `tk init` a partir do backup.
 
@@ -48,7 +48,7 @@ Um único binário com dois modos:
 
 ## Persistência e relatório
 
-- Eventos em JSONL, um arquivo por dia, em `%LOCALAPPDATA%\token-killer\logs\` (equivalente XDG em outros SOs).
+- Eventos em JSONL, um arquivo por dia, em `%LOCALAPPDATA%\token-killer\logs\` no Windows e `~/.local/share/token-killer/logs/` em Linux/macOS (via crate `dirs`).
 - `tk stats` lê e agrega os JSONL do período pedido. Sem estado além dos arquivos de log.
 
 ## Tratamento de erros
