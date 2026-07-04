@@ -2,6 +2,7 @@ mod estimate;
 mod events;
 mod frames;
 mod proxy;
+mod stats;
 mod tracker;
 
 use std::process::ExitCode;
@@ -15,7 +16,10 @@ uso:
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    run_proxy(&args)
+    match args.first().map(String::as_str) {
+        Some("stats") => stats::run(&args[1..]),
+        _ => run_proxy(&args),
+    }
 }
 
 fn run_proxy(args: &[String]) -> ExitCode {
