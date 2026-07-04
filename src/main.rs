@@ -1,3 +1,4 @@
+mod config;
 mod estimate;
 mod events;
 mod frames;
@@ -18,6 +19,8 @@ fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("stats") => stats::run(&args[1..]),
+        Some("init") => config::init(&args[1..]),
+        Some("restore") => config::restore(&args[1..]),
         _ => run_proxy(&args),
     }
 }
