@@ -1,7 +1,7 @@
 /// Estimativa: ~4 caracteres por token, arredondando para cima.
 /// O tokenizer do Claude não é público; para comparação relativa basta.
 pub fn estimate_tokens(byte_len: usize) -> u64 {
-    ((byte_len + 3) / 4) as u64
+    byte_len.div_ceil(4) as u64
 }
 
 #[cfg(test)]

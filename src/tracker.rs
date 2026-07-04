@@ -23,13 +23,20 @@ pub struct Tracker {
 
 impl Tracker {
     pub fn new(server: String) -> Self {
-        Tracker { server, pending: HashMap::new() }
+        Tracker {
+            server,
+            pending: HashMap::new(),
+        }
     }
 
     /// Alimenta um frame; devolve um Event completo quando uma resposta casa.
     pub fn observe(&mut self, frame: Frame) -> Option<Event> {
         match frame {
-            Frame::Request { id, label, params_len } => {
+            Frame::Request {
+                id,
+                label,
+                params_len,
+            } => {
                 self.pending.insert(id, (label, params_len));
                 None
             }
@@ -54,14 +61,23 @@ mod tests {
     use crate::frames::Frame;
 
     fn req(id: &str, label: &str, params_len: usize) -> Frame {
-        Frame::Request { id: id.into(), label: label.into(), params_len }
+        Frame::Request {
+            id: id.into(),
+            label: label.into(),
+            params_len,
+        }
     }
 
     #[test]
     fn matches_response_to_request_by_id() {
         let mut t = Tracker::new("srv".into());
         assert!(t.observe(req("1", "echo", 40)).is_none());
-        let e = t.observe(Frame::Response { id: "1".into(), payload_len: 400 }).unwrap();
+        let e = t
+            .observe(Frame::Response {
+                id: "1".into(),
+                payload_len: 400,
+            })
+            .unwrap();
         assert_eq!(e.server, "srv");
         assert_eq!(e.tool, "echo");
         assert_eq!(e.req_tokens, 10);
@@ -71,7 +87,12 @@ mod tests {
     #[test]
     fn unmatched_response_yields_nothing() {
         let mut t = Tracker::new("srv".into());
-        assert!(t.observe(Frame::Response { id: "9".into(), payload_len: 4 }).is_none());
+        assert!(t
+            .observe(Frame::Response {
+                id: "9".into(),
+                payload_len: 4
+            })
+            .is_none());
     }
 
     #[test]
@@ -79,8 +100,24 @@ mod tests {
         let mut t = Tracker::new("srv".into());
         t.observe(req("1", "a", 4));
         t.observe(req("2", "b", 8));
-        assert_eq!(t.observe(Frame::Response { id: "2".into(), payload_len: 4 }).unwrap().tool, "b");
-        assert_eq!(t.observe(Frame::Response { id: "1".into(), payload_len: 4 }).unwrap().tool, "a");
+        assert_eq!(
+            t.observe(Frame::Response {
+                id: "2".into(),
+                payload_len: 4
+            })
+            .unwrap()
+            .tool,
+            "b"
+        );
+        assert_eq!(
+            t.observe(Frame::Response {
+                id: "1".into(),
+                payload_len: 4
+            })
+            .unwrap()
+            .tool,
+            "a"
+        );
     }
 
     #[test]

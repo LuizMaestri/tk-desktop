@@ -10,7 +10,10 @@ pub fn init(args: &[String]) -> ExitCode {
     };
     match wrap_config(&path, &tk_exe()) {
         Ok(n) => {
-            println!("tk init: {n} servidor(es) envelopado(s) em {}", path.display());
+            println!(
+                "tk init: {n} servidor(es) envelopado(s) em {}",
+                path.display()
+            );
             println!("backup: {}", backup_path(&path).display());
             ExitCode::SUCCESS
         }
@@ -45,7 +48,9 @@ fn target_file(args: &[String]) -> Option<PathBuf> {
     }
     // Windows: %APPDATA%\Claude; macOS: ~/Library/Application Support/Claude;
     // Linux: ~/.config/Claude
-    let path = dirs::config_dir()?.join("Claude").join("claude_desktop_config.json");
+    let path = dirs::config_dir()?
+        .join("Claude")
+        .join("claude_desktop_config.json");
     path.exists().then_some(path)
 }
 
@@ -81,8 +86,13 @@ fn wrap_config(path: &Path, tk_exe: &str) -> Result<usize, String> {
 
     let mut wrapped = 0;
     for (name, server) in servers.iter_mut() {
-        let Some(obj) = server.as_object_mut() else { continue };
-        let Some(command) = obj.get("command").and_then(|c| c.as_str()).map(String::from)
+        let Some(obj) = server.as_object_mut() else {
+            continue;
+        };
+        let Some(command) = obj
+            .get("command")
+            .and_then(|c| c.as_str())
+            .map(String::from)
         else {
             continue; // servidores remotos (url) ficam fora do escopo da v1
         };
@@ -156,8 +166,7 @@ mod tests {
         let wrapped = wrap_config(&path, "C:\\bin\\tk.exe").unwrap();
         assert_eq!(wrapped, 2);
 
-        let root: Value =
-            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        let root: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         let notion = &root["mcpServers"]["notion"];
         assert_eq!(notion["command"], "C:\\bin\\tk.exe");
         let args: Vec<&str> = notion["args"]
@@ -166,7 +175,17 @@ mod tests {
             .iter()
             .map(|v| v.as_str().unwrap())
             .collect();
-        assert_eq!(args, ["--name", "notion", "--", "npx", "-y", "@notionhq/notion-mcp-server"]);
+        assert_eq!(
+            args,
+            [
+                "--name",
+                "notion",
+                "--",
+                "npx",
+                "-y",
+                "@notionhq/notion-mcp-server"
+            ]
+        );
 
         assert_eq!(std::fs::read_to_string(backup_path(&path)).unwrap(), CONFIG);
     }

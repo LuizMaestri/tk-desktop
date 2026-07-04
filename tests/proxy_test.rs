@@ -46,7 +46,12 @@ fn proxy_passes_bytes_and_records_events() {
     assert!(responses[1].contains("xxxx"));
 
     // Eventos gravados: initialize + echo, com resp_tokens >= 100 (payload de 400 chars).
-    let log_file = std::fs::read_dir(logs.path()).unwrap().next().unwrap().unwrap().path();
+    let log_file = std::fs::read_dir(logs.path())
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
     let content = std::fs::read_to_string(log_file).unwrap();
     let lines: Vec<&str> = content.lines().collect();
     assert_eq!(lines.len(), 2);

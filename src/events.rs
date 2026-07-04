@@ -23,7 +23,11 @@ fn try_append(event: &Event) -> Option<()> {
     let dir = log_dir()?;
     fs::create_dir_all(&dir).ok()?;
     let path = dir.join(format!("{}.jsonl", event.ts.format("%Y-%m-%d")));
-    let mut file = fs::OpenOptions::new().create(true).append(true).open(path).ok()?;
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .ok()?;
     let line = serde_json::to_string(event).ok()?;
     writeln!(file, "{line}").ok()
 }
@@ -50,7 +54,9 @@ mod tests {
         append(&event);
         std::env::remove_var("TK_LOG_DIR");
 
-        let file = dir.path().join(format!("{}.jsonl", event.ts.format("%Y-%m-%d")));
+        let file = dir
+            .path()
+            .join(format!("{}.jsonl", event.ts.format("%Y-%m-%d")));
         let content = std::fs::read_to_string(file).unwrap();
         let lines: Vec<_> = content.lines().collect();
         assert_eq!(lines.len(), 2);

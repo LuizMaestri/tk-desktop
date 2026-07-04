@@ -28,13 +28,20 @@ pub fn run(args: &[String]) -> ExitCode {
 fn parse_since(args: &[String]) -> Result<Duration, String> {
     let spec = match args.iter().position(|a| a == "--since") {
         None => return Ok(Duration::days(7)),
-        Some(i) => args.get(i + 1).ok_or("--since exige um valor (ex.: 7d, 24h)")?,
+        Some(i) => args
+            .get(i + 1)
+            .ok_or("--since exige um valor (ex.: 7d, 24h)")?,
     };
     if !spec.is_ascii() || spec.len() < 2 {
         return Err(format!("período inválido: {spec} (use ex.: 7d, 24h)"));
     }
     let (num, unit) = spec.split_at(spec.len() - 1);
-    let n: i64 = num.parse().map_err(|_| format!("período inválido: {spec}"))?;
+    let n: i64 = num
+        .parse()
+        .map_err(|_| format!("período inválido: {spec}"))?;
+    if n < 0 {
+        return Err(format!("período inválido: {spec} (use ex.: 7d, 24h)"));
+    }
     match unit {
         "d" => Ok(Duration::days(n)),
         "h" => Ok(Duration::hours(n)),
@@ -45,13 +52,17 @@ fn parse_since(args: &[String]) -> Result<Duration, String> {
 fn read_events(dir: &Path, since: Duration) -> Vec<Event> {
     let cutoff = Utc::now() - since;
     let mut events = Vec::new();
-    let Ok(entries) = std::fs::read_dir(dir) else { return events };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return events;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
             continue;
         }
-        let Ok(content) = std::fs::read_to_string(&path) else { continue };
+        let Ok(content) = std::fs::read_to_string(&path) else {
+            continue;
+        };
         for line in content.lines() {
             if let Ok(event) = serde_json::from_str::<Event>(line) {
                 if event.ts >= cutoff {
@@ -71,7 +82,9 @@ fn report(events: &[Event]) -> String {
     // (server, tool) -> (chamadas, req, resp)
     let mut by_tool: BTreeMap<(String, String), (u64, u64, u64)> = BTreeMap::new();
     for e in events {
-        let slot = by_tool.entry((e.server.clone(), e.tool.clone())).or_default();
+        let slot = by_tool
+            .entry((e.server.clone(), e.tool.clone()))
+            .or_default();
         slot.0 += 1;
         slot.1 += e.req_tokens;
         slot.2 += e.resp_tokens;
@@ -79,15 +92,20 @@ fn report(events: &[Event]) -> String {
     let mut rows: Vec<_> = by_tool.into_iter().collect();
     rows.sort_by_key(|(_, (_, req, resp))| std::cmp::Reverse(req + resp));
 
-    let mut out = String::from(
-        "servidor            tool                      chamadas   tokens req   tokens resp\n",
+    let mut out = format!(
+        "{:<17} {:<25} {:>8} {:>12} {:>13}\n",
+        "servidor", "tool", "chamadas", "tokens req", "tokens resp"
     );
     let mut total = 0u64;
     for ((server, tool), (calls, req, resp)) in &rows {
-        out.push_str(&format!("{server:<17} {tool:<25} {calls:>8} {req:>12} {resp:>13}\n"));
+        out.push_str(&format!(
+            "{server:<17} {tool:<25} {calls:>8} {req:>12} {resp:>13}\n"
+        ));
         total += req + resp;
     }
-    out.push_str(&format!("\ntotal estimado: {total} tokens (heurística ~4 chars/token)\n"));
+    out.push_str(&format!(
+        "\ntotal estimado: {total} tokens (heurística ~4 chars/token)\n"
+    ));
     out
 }
 
@@ -118,6 +136,11 @@ mod tests {
         assert_eq!(parse_since(&args("24h")).unwrap(), Duration::hours(24));
         assert!(parse_since(&args("banana")).is_err());
         assert!(parse_since(&["--since".to_string()]).is_err());
+    }
+
+    #[test]
+    fn since_rejects_negative_magnitude() {
+        assert!(parse_since(&["--since".into(), "-5d".into()]).is_err());
     }
 
     #[test]

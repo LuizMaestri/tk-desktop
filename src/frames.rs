@@ -4,7 +4,11 @@ use serde_json::Value;
 #[derive(Debug, PartialEq)]
 pub enum Frame {
     /// Requisição com id: rótulo (tool ou método) + tamanho dos params serializados.
-    Request { id: String, label: String, params_len: usize },
+    Request {
+        id: String,
+        label: String,
+        params_len: usize,
+    },
     /// Resposta (result ou error) com id + tamanho do payload serializado.
     Response { id: String, payload_len: usize },
     /// Notificação, linha não-JSON ou formato não reconhecido: só repassar.
@@ -34,9 +38,16 @@ pub fn inspect(line: &[u8]) -> Frame {
             method.to_string()
         };
         let params_len = params.map(|p| p.to_string().len()).unwrap_or(0);
-        Frame::Request { id, label, params_len }
+        Frame::Request {
+            id,
+            label,
+            params_len,
+        }
     } else if let Some(payload) = value.get("result").or_else(|| value.get("error")) {
-        Frame::Response { id, payload_len: payload.to_string().len() }
+        Frame::Response {
+            id,
+            payload_len: payload.to_string().len(),
+        }
     } else {
         Frame::Passthrough
     }
@@ -49,18 +60,31 @@ mod tests {
     #[test]
     fn tools_call_request_uses_tool_name_as_label() {
         let line = br#"{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{"msg":"oi"}}}"#;
-        let Frame::Request { id, label, params_len } = inspect(line) else {
+        let Frame::Request {
+            id,
+            label,
+            params_len,
+        } = inspect(line)
+        else {
             panic!("esperava Request");
         };
         assert_eq!(id, "1");
         assert_eq!(label, "echo");
-        assert_eq!(params_len, r#"{"name":"echo","arguments":{"msg":"oi"}}"#.len());
+        assert_eq!(
+            params_len,
+            r#"{"name":"echo","arguments":{"msg":"oi"}}"#.len()
+        );
     }
 
     #[test]
     fn other_request_uses_method_as_label() {
         let line = br#"{"jsonrpc":"2.0","id":"a","method":"tools/list"}"#;
-        let Frame::Request { id, label, params_len } = inspect(line) else {
+        let Frame::Request {
+            id,
+            label,
+            params_len,
+        } = inspect(line)
+        else {
             panic!("esperava Request");
         };
         assert_eq!(id, "\"a\"");
@@ -73,7 +97,10 @@ mod tests {
         let line = br#"{"jsonrpc":"2.0","id":1,"result":{"ok":true}}"#;
         assert_eq!(
             inspect(line),
-            Frame::Response { id: "1".into(), payload_len: r#"{"ok":true}"#.len() }
+            Frame::Response {
+                id: "1".into(),
+                payload_len: r#"{"ok":true}"#.len()
+            }
         );
     }
 

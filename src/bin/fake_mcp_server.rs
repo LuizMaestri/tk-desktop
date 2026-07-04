@@ -23,13 +23,18 @@ fn main() {
         let result = match method {
             "initialize" => serde_json::json!({"capabilities": {}, "serverInfo": {"name": "fake"}}),
             "tools/list" => serde_json::json!({"tools": [{"name": "echo"}]}),
-            "tools/call" => serde_json::json!({"content": [{"type": "text", "text": "x".repeat(400)}]}),
+            "tools/call" => {
+                serde_json::json!({"content": [{"type": "text", "text": "x".repeat(400)}]})
+            }
             _ => serde_json::json!({}),
         };
         let resp = serde_json::json!({"jsonrpc": "2.0", "id": id, "result": result});
         writeln!(stdout, "{resp}").unwrap();
         stdout.flush().unwrap();
     }
-    let code = std::env::var("FAKE_EXIT_CODE").ok().and_then(|c| c.parse().ok()).unwrap_or(0);
+    let code = std::env::var("FAKE_EXIT_CODE")
+        .ok()
+        .and_then(|c| c.parse().ok())
+        .unwrap_or(0);
     std::process::exit(code);
 }
